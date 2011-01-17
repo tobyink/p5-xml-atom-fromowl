@@ -2,11 +2,11 @@
 
 use lib "lib";
 use RDF::TrineShortcuts;
-use XML::Atom::OWL;
+use RDF::RDFa::Parser;
 use XML::Atom::FromOWL;
 
 my $atom = <<ATOM;
-<feed xmlns="http://www.w3.org/2005/Atom">
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:hnews="http://ontologi.es/hnews#">
   <title type="text">dive into mark</title>
   <subtitle type="html">
 	 A &lt;em&gt;lot&lt;/em&gt; of effort
@@ -33,6 +33,7 @@ my $atom = <<ATOM;
 	 <id>tag:example.org,2003:3.2397</id>
 	 <updated>2005-07-31T12:29:29Z</updated>
 	 <published>2003-12-13T08:29:29-04:00</published>
+	 <meta property="hnews:dateline-literal" content="Dateline Literal" xml:lang="en-GB" />
 	 <author>
 		<name>Mark Pilgrim</name>
 		<uri>http://example.org/</uri>
@@ -58,10 +59,11 @@ my $atom = <<ATOM;
 </feed>
 ATOM
 
-my $awol  = XML::Atom::OWL->new($atom, 'http://example.net/')->consume;
+my $cfg   = RDF::RDFa::Parser::Config->new('atom', '1.1', atom_parser=>1);
+my $awol  = RDF::RDFa::Parser->new($atom, 'http://example.net/', $cfg)->consume;
 my $model = $awol->graph;
 
 my $exporter = XML::Atom::FromOWL->new();
 print $_->as_xml foreach $exporter->export_feeds($model);
-#print rdf_string($model => 'rdfxml');
+print rdf_string($model => 'rdfxml');
 

@@ -3,6 +3,7 @@ package XML::Atom::FromOWL;
 use 5.008;
 use common::sense;
 
+use Data::UUID;
 use RDF::TrineShortcuts qw[:all];
 use Scalar::Util qw[blessed];
 use XML::Atom::Content;
@@ -11,13 +12,15 @@ use XML::Atom::Feed;
 use XML::Atom::Link;
 use XML::Atom::Person;
 
-use constant ATOM => 'http://www.w3.org/2005/Atom';
-sub AWOL { return 'http://bblfish.net/work/atom-owl/2006-06-06/#' . shift; }
-sub AX   { return 'http://buzzword.org.uk/rdf/atomix#' . shift; }
-sub FOAF { return 'http://xmlns.com/foaf/0.1/' . shift; }
-sub LINK { return 'http://www.iana.org/assignments/relation/' . shift; }
-sub RDF  { return 'http://www.w3.org/1999/02/22-rdf-syntax-ns#' . shift; }
-sub XSD  { return 'http://www.w3.org/2001/XMLSchema#' . shift; }
+use constant ATOM  => 'http://www.w3.org/2005/Atom';
+use constant XHTML => 'http://www.w3.org/1999/xhtml';
+sub AWOL  { return 'http://bblfish.net/work/atom-owl/2006-06-06/#' . shift; }
+sub AX    { return 'http://buzzword.org.uk/rdf/atomix#' . shift; }
+sub FOAF  { return 'http://xmlns.com/foaf/0.1/' . shift; }
+sub HNEWS { return 'http://ontologi.es/hnews#' . shift; }
+sub LINK  { return 'http://www.iana.org/assignments/relation/' . shift; }
+sub RDF   { return 'http://www.w3.org/1999/02/22-rdf-syntax-ns#' . shift; }
+sub XSD   { return 'http://www.w3.org/2001/XMLSchema#' . shift; }
 
 use namespace::clean;
 
@@ -26,7 +29,7 @@ our (%feed_dispatch, %entry_dispatch);
 
 BEGIN
 {
-	$VERSION = '0.001';
+	$VERSION = '0.002';
 
 	%feed_dispatch = (
 		AWOL('entry')        => \&_export_feed_entry,
@@ -54,6 +57,9 @@ BEGIN
 		AWOL('contributor')  => \&_export_thing_PersonConstruct,
 		AWOL('category')     => \&_export_thing_category,
 		AWOL('content')      => \&_export_entry_content,
+		HNEWS('dateline-literal')  => \&_export_thing_generic,
+		HNEWS('principles')  => \&_export_thing_generic,
+		HNEWS('geo')         => \&_export_thing_generic,
 		# source
 		);
 }
@@ -124,10 +130,6 @@ sub export_feed
 	my $triples = $model->get_statements($subject, undef, undef);
 	while (my $triple = $triples->next)
 	{
-		next
-			unless (substr($triple->predicate->uri, 0, length(&AWOL)) eq &AWOL or
-					  substr($triple->predicate->uri, 0, length(&AX)) eq &AX);
-
 		if (defined $feed_dispatch{$triple->predicate->uri}
 		and ref($feed_dispatch{$triple->predicate->uri}) eq 'CODE')
 		{
@@ -136,9 +138,11 @@ sub export_feed
 		}
 		else
 		{
-			#warn("FEED: " . $triple->predicate->uri . " not implemented yet!");
+#			$self->_export_thing_generic($feed, $model, $triple, %options);
 		}
 	}
+
+	$feed->id( $self->_make_id ) unless $feed->id;
 
 	return $feed;
 }
@@ -154,10 +158,6 @@ sub export_entry
 	my $triples = $model->get_statements($subject, undef, undef);
 	while (my $triple = $triples->next)
 	{
-#		next
-#			unless (substr($triple->predicate->uri, 0, length(&AWOL)) eq &AWOL or
-#					  substr($triple->predicate->uri, 0, length(&AX)) eq &AX);
-
 		if (defined $entry_dispatch{$triple->predicate->uri}
 		and ref($entry_dispatch{$triple->predicate->uri}) eq 'CODE')
 		{
@@ -166,11 +166,41 @@ sub export_entry
 		}
 		else
 		{
-			#warn("ENTRY: " . $triple->predicate->uri . " not implemented yet!");
+#			$self->_export_thing_generic($entry, $model, $triple, %options);
 		}
 	}
-	
+
+	$entry->id( $self->_make_id ) unless $entry->id;
+
 	return $entry;
+}
+
+sub _export_thing_generic
+{
+	my ($self, $thing, $model, $triple, %options) = @_;
+
+	if ($triple->object->is_literal)
+	{
+		my $attr = {
+			content  => $triple->object->literal_value,
+			property => $triple->predicate->uri,
+			};
+		$attr->{'xml:lang'} = $triple->object->literal_value_language
+			if $triple->object->has_language;
+		$attr->{'datatype'} = $triple->object->literal_datatype
+			if $triple->object->has_datatype;
+		$thing->set_attr(typeof => '');
+		return $thing->set(XHTML(), 'meta', undef, $attr, 1);
+	}
+	elsif ($triple->object->is_resource)
+	{
+		my $attr = {
+			href     => $triple->object->uri,
+			rel      => $triple->predicate->uri,
+			};
+		$thing->set_attr(typeof => '');
+		return $thing->set(XHTML(), 'link', undef, $attr, 1);
+	}
 }
 
 sub _export_feed_entry
@@ -425,6 +455,13 @@ sub _export_thing_ImageConstruct
 		my $attr = {};
 		return $thing->set(ATOM(), $tag, flatten_node($triple->object), $attr, 1);
 	}
+}
+
+sub _make_id
+{
+	my ($self) = @_;
+	$self->{uuid} ||= Data::UUID->new;
+	return 'urn:uuid:'.$self->{uuid}->create_str;
 }
 
 1;
