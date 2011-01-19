@@ -6,7 +6,9 @@ use RDF::RDFa::Parser;
 use XML::Atom::FromOWL;
 
 my $atom = <<ATOM;
-<feed xmlns="http://www.w3.org/2005/Atom" xmlns:hnews="http://ontologi.es/hnews#">
+<feed xmlns="http://www.w3.org/2005/Atom"
+	xmlns:hnews="http://ontologi.es/hnews#"
+	xmlns:thr="http://purl.org/syndication/thread/1.0">
   <title type="text">dive into mark</title>
   <subtitle type="html">
 	 A &lt;em&gt;lot&lt;/em&gt; of effort
@@ -34,6 +36,7 @@ my $atom = <<ATOM;
 	 <updated>2005-07-31T12:29:29Z</updated>
 	 <published>2003-12-13T08:29:29-04:00</published>
 	 <meta property="hnews:dateline-literal" content="Dateline Literal" xml:lang="en-GB" />
+	 <meta rel="hnews:source-org" href="http://dbpedia.org/resource/IANA" />
 	 <author>
 		<name>Mark Pilgrim</name>
 		<uri>http://example.org/</uri>
@@ -54,6 +57,8 @@ my $atom = <<ATOM;
   </entry>
   <entry>
 	<id>http://example.net/id/2</id>
+	<thr:total>9</thr:total>
+	<thr:in-reply-to source="foo" href="bar" ref="baz" />
 	<content type="image/jpeg" src="data:text/html;base64,PCFET0NUWVBFIEhUTUwgUFVCTElDICItLy9XM0MvL0RURCBIVE1MIDQuMC8vRU4iPg0KPGh0bWwgbGFuZz0iZW4iPg0KIDxoZWFkPg0KICA8dGl0bGU%2BVGVzdDwvdGl0bGU%2BDQogIDxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI%2BDQogIDwvc3R5bGU%2BDQogPC9oZWFkPg0KIDxib2R5Pg0KICA8cD48L3A%2BDQogPC9ib2R5Pg0KPC9odG1sPg0K" />
   </entry>
 </feed>
