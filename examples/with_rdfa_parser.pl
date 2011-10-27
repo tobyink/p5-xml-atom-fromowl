@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+use lib "../XML-Atom-OWL/lib";
 use lib "lib";
 use RDF::TrineShortcuts;
 use RDF::RDFa::Parser;
@@ -7,6 +8,7 @@ use XML::Atom::FromOWL;
 
 my $atom = <<ATOM;
 <feed xmlns="http://www.w3.org/2005/Atom"
+	xmlns:as="http://activitystrea.ms/spec/1.0/"
 	xmlns:hnews="http://ontologi.es/hnews#"
 	xmlns:thr="http://purl.org/syndication/thread/1.0">
   <title type="text">dive into mark</title>
@@ -42,6 +44,12 @@ my $atom = <<ATOM;
 		<uri>http://example.org/</uri>
 		<email>f8dy\@example.com</email>
 	 </author>
+	 <as:verb>post</as:verb>
+	 <as:object>
+	   <id>foo:bar:baz</id>
+	   <title>Foo Bar Baz</title>
+	   <as:object-type>note</as:object-type>
+	 </as:object>
 	 <contributor>
 		<name>Sam Ruby</name>
 	 </contributor>
@@ -70,5 +78,5 @@ my $model = $awol->graph;
 
 my $exporter = XML::Atom::FromOWL->new();
 print $_->as_xml foreach $exporter->export_feeds($model);
-print rdf_string($model => 'rdfxml');
+print rdf_string($model => 'Turtle');
 
