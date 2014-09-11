@@ -66,3 +66,10 @@ my:v_0-101
 		dcs:item   [ rdfs:label "Drop common::sense dependency; use strict instead."@en ] ;
 		dcs:item   [ rdfs:label "Drop RDF::TrineShortcuts dependency; use RDF::TrineX::Functions instead."@en ]
 		] .
+
+`XML-Atom-FromOWL 0.102 cpan:TOBYINK`
+	issued    2014-09-11;
+	changeset [
+		item "Switch to Dist::Inkt."^^Packaging;
+	].
+
